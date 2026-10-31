@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetailCart | Multi-Category Shopping</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="nav-brand" onclick="switchView('store')">
+      <span class="brand-icon">🛒</span>
+      <span class="brand-name">RetailCart</span>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search products, brands, or categories..." oninput="handleSearch()">
+    </div>
+
+    <div class="nav-actions">
+      <button class="nav-btn" id="adminToggleBtn" style="display: none;" onclick="toggleAdminView()">⚙️ Admin Dashboard</button>
+      <button class="nav-btn" onclick="switchView('orders')">📦 Orders <span class="badge" id="ordersCount" style="display: none; background: #2563eb;"></span></button>
+      <button class="nav-btn cart-btn" onclick="openCart()">
+        🛍️ Cart <span class="badge" id="cartCount" style="display: none;"></span>
+      </button>
+      <div id="authNavContainer">
+        <button class="btn btn-primary" onclick="openAuthModal('login')">Sign In</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main Content Container -->
+  <main class="container">
+    
+    <!-- VIEW 1: Storefront / Catalog -->
+    <section id="storeView" class="view-section active">
+      <!-- Category Filter Pills -->
+      <div class="category-bar" id="categoryBar">
+        <button class="pill active" onclick="filterCategory('All')">All Items</button>
+        <button class="pill" onclick="filterCategory('Electronics')">Electronics</button>
+        <button class="pill" onclick="filterCategory('Fashion')">Fashion</button>
+        <button class="pill" onclick="filterCategory('Home')">Home Essentials</button>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="product-grid" id="productGrid">
+        <div class="loading">Loading catalog...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: Order History & Tracking -->
+    <section id="ordersView" class="view-section">
+      <div class="section-header">
+        <h2>📦 Your Order History & Live Tracking</h2>
+        <button class="btn btn-secondary" onclick="switchView('store')">← Back to Store</button>
+      </div>
+      <div id="ordersList" class="orders-list">
+        <div class="empty-state">No orders placed yet. Add items and checkout!</div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: Admin Operations Dashboard (Differentiator Edge Point) -->
+    <section id="adminView" class="view-section">
+      <div class="section-header">
+        <h2>⚙️ Admin Operations & Inventory Dashboard</h2>
+        <button class="btn btn-secondary" onclick="switchView('store')">← Return to Storefront</button>
+      </div>
+
+      <!-- Real-time Admin Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Total Orders</div>
+          <div class="stat-val" id="adminTotalOrders">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Gross Revenue</div>
+          <div class="stat-val text-green" id="adminTotalRev">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Low Stock Items</div>
+          <div class="stat-val text-orange" id="adminLowStock">0</div>
+        </div>
+      </div>
+
+      <!-- Admin Orders Management -->
+      <h3 style="margin-top: 1.5rem;">Fulfillment & Order Dispatch</h3>
+      <div id="adminOrdersTable" class="admin-table-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Cart Drawer Modal -->
+  <div id="cartModal" class="modal-overlay" onclick="closeOnBackdrop(event, 'cartModal')">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h3>🛍️ Shopping Cart</h3>
+        <button class="close-btn" onclick="closeModal('cartModal')">&times;</button>
+      </div>
+      <div id="cartItemsList" class="drawer-body">
+        <!-- Dynamic Cart Items -->
+      </div>
+      <div class="drawer-footer">
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span id="cartSubtotal">$0.00</span>
+        </div>
+        <div class="summary-row">
+          <span>Standard Shipping:</span>
+          <span class="text-green">FREE</span>
+        </div>
+        <div class="summary-row total-row">
+          <span>Total:</span>
+          <span id="cartTotal">$0.00</span>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="openCheckout()">Proceed to Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout & Address Modal -->
+  <div id="checkoutModal" class="modal-overlay" onclick="closeOnBackdrop(event, 'checkoutModal')">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>💳 Complete Your Order</h3>
+        <button class="close-btn" onclick="closeModal('checkoutModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Shipping Address</label>
+        <textarea id="checkoutAddress" class="form-input" rows="2" placeholder="Street address, City, Postal Code">221B Baker Street, London, UK</textarea>
+        
+        <label style="margin-top: 0.8rem;">Payment Method</label>
+        <select id="checkoutPayment" class="form-input">
+          <option>Cash on Delivery (COD)</option>
+          <option>Google Pay / UPI</option>
+          <option>Credit / Debit Card</option>
+        </select>
+
+        <div class="checkout-summary-box">
+          <p>Payable Total: <strong id="checkoutTotalAmount">$0.00</strong></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('checkoutModal')">Cancel</button>
+        <button class="btn btn-success" onclick="confirmOrderPlacement()">Confirm & Place Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Invoice / Receipt Modal (Edge Point) -->
+  <div id="invoiceModal" class="modal-overlay" onclick="closeOnBackdrop(event, 'invoiceModal')">
+    <div class="modal-card invoice-card">
+      <div class="invoice-header">
+        <h2>RetailCart Receipt</h2>
+        <span class="invoice-badge" id="receiptOrderId">#ORD</span>
+      </div>
+      <div id="receiptContent" class="invoice-body">
+        <!-- Filled by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('invoiceModal')">Close</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save Receipt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modal (Google + Signup + 1-Click Demo) -->
+  <div id="authModal" class="modal-overlay" onclick="closeOnBackdrop(event, 'authModal')">
+    <div class="modal-card auth-card">
+      <div class="auth-tabs">
+        <button id="authTabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+        <button id="authTabRegister" class="auth-tab" onclick="switchAuthTab('register')">Create Account</button>
+      </div>
+
+      <div class="auth-body">
+        <!-- 1-Click Demo Buttons for Instant Evaluator Demo -->
+        <div class="demo-box">
+          <div class="demo-title">⚡ 1-Click Hackathon Evaluator Login:</div>
+          <div class="demo-buttons">
+            <button class="btn btn-demo" onclick="demoLogin('buyer')">Demo Buyer</button>
+            <button class="btn btn-demo" onclick="demoLogin('admin')">Demo Admin</button>
+          </div>
+        </div>
+
+        <div class="divider"><span>OR WITH EMAIL</span></div>
+
+        <div id="registerNameGroup" style="display: none;">
+          <label>Full Name</label>
+          <input type="text" id="authName" class="form-input" placeholder="Alex Morgan">
+        </div>
+
+        <label>Email Address</label>
+        <input type="email" id="authEmail" class="form-input" placeholder="user@retailcart.com">
+
+        <label>Password</label>
+        <div style="position: relative;">
+          <input type="password" id="authPassword" class="form-input" placeholder="Min 8 chars (A-Z, a-z, 0-9, @#$)" oninput="handlePasswordInput()">
+          <span class="pw-toggle-btn" onclick="togglePasswordVisibility()">👁️</span>
+        </div>
+
+        <!-- Banking Grade Password Strength Meter (Shown on Sign Up) -->
+        <div id="pwStrengthContainer" style="display: none; margin-bottom: 0.9rem;">
+          <div class="strength-bar-bg">
+            <div id="strengthBar" class="strength-bar-fill"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 3px; font-weight: 600;">
+            <span style="color: var(--text-muted);">Security Level:</span>
+            <span id="strengthLabel" style="color: #ef4444;">Too Weak</span>
+          </div>
+
+          <div class="pw-rules-grid">
+            <div class="rule-tag" id="ruleLength">8+ Chars</div>
+            <div class="rule-tag" id="ruleUpper">Uppercase (A-Z)</div>
+            <div class="rule-tag" id="ruleLower">Lowercase (a-z)</div>
+            <div class="rule-tag" id="ruleNumber">Number (0-9)</div>
+            <div class="rule-tag" id="ruleSpecial">Special (@#$%)</div>
+          </div>
+        </div>
+
+        <button id="authSubmitBtn" class="btn btn-primary btn-block" onclick="submitAuth()">Sign In</button>
+
+        <div class="divider"><span>OR WITH GOOGLE</span></div>
+
+        <!-- Google Sign-in button with logo -->
+        <button class="btn btn-google btn-block" onclick="openGoogleModal()">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Google Account Selector Modal (Works 100% Offline & Online) -->
+  <div id="googleModal" class="modal-overlay" onclick="closeOnBackdrop(event, 'googleModal')">
+    <div class="modal-card google-card">
+      <div style="text-align: center; margin-bottom: 1.2rem;">
+        <svg width="34" height="34" viewBox="0 0 48 48" style="margin-bottom: 0.3rem;">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <h3 style="font-size: 1.2rem; font-weight: 600;">Sign in with Google</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Choose an account to continue to <b>RetailCart</b></p>
+      </div>
+
+      <!-- Google Accounts List -->
+      <div class="google-accounts-list">
+        <div class="google-account-item" onclick="selectGoogleAccount('Eashan Singh', 'singheashan2005@gmail.com')">
+          <div class="google-avatar" style="background:#2563eb;">E</div>
+          <div>
+            <div class="google-account-name">Eashan Singh</div>
+            <div class="google-account-email">singheashan2005@gmail.com</div>
+          </div>
+        </div>
+
+        <div class="google-account-item" onclick="selectGoogleAccount('Alex Morgan', 'alex.morgan@gmail.com')">
+          <div class="google-avatar" style="background:#059669;">A</div>
+          <div>
+            <div class="google-account-name">Alex Morgan</div>
+            <div class="google-account-email">alex.morgan@gmail.com</div>
+          </div>
+        </div>
+
+        <div class="google-account-item" onclick="showCustomGoogleInput()">
+          <div class="google-avatar" style="background:#64748b;">+</div>
+          <div>
+            <div class="google-account-name">Use another Google account</div>
+            <div class="google-account-email">Sign in with any other Gmail</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Google Account Input -->
+      <div id="customGoogleBox" style="display: none; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+        <label style="font-size: 0.85rem; font-weight: 600;">Google Email Address</label>
+        <input type="email" id="customGoogleEmail" class="form-input" placeholder="e.g. yourname@gmail.com">
+        <button class="btn btn-primary btn-block" onclick="submitCustomGoogleAccount()">Continue with Google</button>
+      </div>
+
+      <div style="margin-top: 1.2rem; text-align: center;">
+        <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 1.2rem;" onclick="closeModal('googleModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

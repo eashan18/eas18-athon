@@ -1,0 +1,4 @@
+retailcart.db
+__pycache__/
+*.pyc
+.vscode/

@@ -153,14 +153,3 @@ When demonstrating to the evaluators:
 
 ---
 
-## 🔄 Adapting `main.py` to Other Problem Statements in 2 Minutes
-
-All Domain 3 problems follow this same catalog $\rightarrow$ action $\rightarrow$ tracking baseline. To adapt during the hackathon:
-
-| Problem Statement | Change `sample_products` in `main.py` to: | Action Label in UI |
-| :--- | :--- | :--- |
-| **RetailCart** *(Current)* | `("Headphones", "Electronics", 129.99, 15, "🎧", "...")` | "Add to Cart" $\rightarrow$ "Checkout" |
-| **CareBook (Clinic)** | `("Dr. Smith - Cardiologist", "Cardiology", 50.0, 8, "🩺", "...")` | "Book Slot" $\rightarrow$ "Confirm Visit" |
-| **MediStore (Pharmacy)** | `("Amoxicillin 500mg", "Antibiotics", 14.50, 20, "💊", "...")` | "Add Rx" $\rightarrow$ "Place Order" |
-| **LabConnect (Diagnostics)**| `("Complete Blood Count", "Blood Test", 35.0, 50, "🔬", "...")` | "Book Test Slot" |
-| **ReturnEase (Returns)** | `("Order #101 - Smart Watch", "Return Eligible", 99.0, 1, "⌚", "...")`| "Request Return & Refund" |
